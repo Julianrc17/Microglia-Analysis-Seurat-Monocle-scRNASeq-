@@ -122,5 +122,251 @@ Idents(seurat)<-"broad.cell.type"
 levels(Idents(seurat))
 table(Idents(seurat))  
 
+#Dim Plot
+
 DimPlot(seurat, reduction = "umap", label = TRUE)
 
+# Feature Plot
+
+FeaturePlot(seurat_all, features = "All_percent", cols = c("green", "red"), reduction = "umap", min.cutoff="q10",max.cutoff="q90")
+FeaturePlot(seurat_E2vsE3, features = "E2vsE3_percent", cols = c("green", "red"), reduction = "umap", min.cutoff="q10",max.cutoff="q90")
+FeaturePlot(seurat_E4vsE3, features = "E4vsE3_percent", cols = c("green", "red"), reduction = "umap", min.cutoff="q10",max.cutoff="q90")
+FeaturePlot(seurat_E4vsE2, features = "E4vsE2_percent", cols = c("green", "red"), reduction = "umap", min.cutoff="q10",max.cutoff="q90")
+
+# Find Markers
+
+markers_Mic <- FindMarkers(seurat, ident.1 = "Mic", logfc.threshold = 0.25, min.pct = 0.1)
+head(markers_Mic)
+intersect(genes, rownames(markers_Mic))
+markers_Mic[rownames(markers_Mic) %in% genes, ]
+
+microglia_subset <- subset(seurat, idents = "Mic")
+microglia_subset <- FindClusters(microglia_subset, resolution = 0.5)
+
+microglia_subset$gene_signature <- rowMeans(FetchData(microglia_subset, vars = genes), na.rm = TRUE)
+
+VlnPlot(microglia_subset, features = "gene_signature")
+
+gene_expression <- rowMeans(FetchData(microglia_subset, vars = genes), na.rm = TRUE)
+
+microglia_subset$gene_group <- ifelse(gene_expression > 0, "Expressed", "Not Expressed")
+
+DimPlot(microglia_subset, reduction = "umap", group.by = "gene_group", cols = c("blue", "gray"))
+
+
+
+dir.create("featureplot_mic", showWarnings = FALSE)
+
+for (gene in genes) {
+  p <- FeaturePlot(microglia_subset, features = gene, reduction = "umap") +
+    labs(title = gene)  
+  
+  ggsave(filename = paste0("featureplot_mic/FeaturePlot_", gene, ".png"),
+         plot = p, width = 5, height = 5, dpi = 300)
+}
+
+dir.create("vlnplot_mic", showWarnings = FALSE)
+
+for (gene in genes) {
+  p <- VlnPlot(microglia_subset, features = gene) +
+    labs(title = gene) 
+  
+  ggsave(filename = paste0("vlnplot_mic/VlnPlot_", gene, ".png"),
+         plot = p, width = 5, height = 5, dpi = 300)
+}
+
+# FindAllMarker
+
+all_markers <- FindAllMarkers(seurat, logfc.threshold = 0.25, min.pct = 0.1, only.pos = TRUE)
+head(all_markers)
+DimPlot(microglia_subset, reduction = "umap", label = TRUE)
+
+# FindMarkers Astrocitos
+
+markers_Ast <- FindMarkers(seurat, ident.1 = "Ast", logfc.threshold = 0.25, min.pct = 0.1)
+head(markers_Ast)
+ast_subset <- subset(seurat, idents = "Ast")
+ast_subset <- FindClusters(ast_subset, resolution = 0.5)
+DimPlot(ast_subset, reduction = "umap", label = TRUE)
+markers_Ast[rownames(markers_Ast) %in% genes, ]
+
+# FindMarkers Endoteliales
+markers_End <- FindMarkers(seurat, ident.1 = "End", logfc.threshold = 0.25, min.pct = 0.1)
+head(markers_End)
+
+
+end_subset <- subset(seurat, idents = "End")
+end_subset <- FindClusters(end_subset, resolution = 0.5)
+DimPlot(end_subset, reduction = "umap", label = TRUE)
+
+markers_End[rownames(markers_End) %in% genes, ]
+
+# FindMarkers Neuronas Excitatorias
+
+markers_Ex <- FindMarkers(seurat, ident.1 = "Ex", logfc.threshold = 0.25, min.pct = 0.1)
+head(markers_Ex)
+ex_subset <- subset(seurat, idents = "Ex")
+ex_subset <- FindClusters(ex_subset, resolution = 0.5)
+DimPlot(ex_subset, reduction = "umap", label = TRUE)
+markers_Ex[rownames(markers_Ex) %in% genes, ]
+
+# FindMarkers Neuronas Inhibitorias
+markers_In <- FindMarkers(seurat, ident.1 = "In", logfc.threshold = 0.25, min.pct = 0.1)
+head(markers_In)
+in_subset <- subset(seurat, idents = "In")
+in_subset <- FindClusters(in_subset, resolution = 0.5)
+DimPlot(in_subset, reduction = "umap", label = TRUE)
+
+markers_In[rownames(markers_In) %in% genes, ]
+
+# FindMarkers Oligodendrocitos
+
+markers_Oli <- FindMarkers(seurat, ident.1 = "Oli", logfc.threshold = 0.25, min.pct = 0.1)
+head(markers_Oli)
+
+oli_subset <- subset(seurat, idents = "Oli")
+oli_subset <- FindClusters(oli_subset, resolution = 0.5)
+DimPlot(oli_subset, reduction = "umap", label = TRUE)
+
+markers_Oli[rownames(markers_Oli) %in% genes, ]
+
+# FindMarkers Precursores Oligodendrocitos
+markers_Opc <- FindMarkers(seurat, ident.1 = "Opc", logfc.threshold = 0.25, min.pct = 0.1)
+head(markers_Opc)
+opc_subset <- subset(seurat, idents = "Opc")
+opc_subset <- FindClusters(opc_subset, resolution = 0.5)
+DimPlot(opc_subset, reduction = "umap", label = TRUE)
+markers_Opc[rownames(markers_Opc) %in% genes, ]
+
+# FindMarkers Pericitos
+markers_Per <- FindMarkers(seurat, ident.1 = "Per", logfc.threshold = 0.25, min.pct = 0.1)
+head(markers_Per)
+per_subset <- subset(seurat, idents = "Per")
+per_subset <- FindClusters(per_subset, resolution = 0.5)
+DimPlot(per_subset, reduction = "umap", label = TRUE)
+markers_Per[rownames(markers_Per) %in% genes, ]
+
+# For saving the markers in a excel
+
+library(openxlsx)
+
+wb <- createWorkbook()
+
+markers_list <- list(
+  "Ast" = markers_Ast[rownames(markers_Ast) %in% genes, ],
+  "End" = markers_End[rownames(markers_End) %in% genes, ],
+  "Ex" = markers_Ex[rownames(markers_Ex) %in% genes, ],
+  "In" = markers_In[rownames(markers_In) %in% genes, ],
+  "Mic" = markers_Mic[rownames(markers_Mic) %in% genes, ],
+  "Oli" = markers_Oli[rownames(markers_Oli) %in% genes, ],
+  "Opc" = markers_Opc[rownames(markers_Opc) %in% genes, ],
+  "Per" = markers_Per[rownames(markers_Per) %in% genes, ]
+)
+
+for (name in names(markers_list)) {
+  addWorksheet(wb, name)
+  writeData(wb, sheet = name, markers_list[[name]], rowNames = TRUE)
+}
+
+saveWorkbook(wb, "Markers.xlsx", overwrite = TRUE)
+
+# Monocle
+
+seurat_matrix <- seurat[["RNA"]]$counts
+cell_metadata <- seurat@meta.data
+gene_metadata <- seurat[["RNA"]]@meta.features
+
+library(monocle3)
+
+cds <- new_cell_data_set(
+  seurat_matrix,
+  cell_metadata = cell_metadata,
+  gene_metadata = gene_metadata
+)
+
+cds <- preprocess_cds(cds, method = "PCA")
+
+cds <- reduce_dimension(cds, max_components = 2)
+
+cds <- cluster_cells(cds, reduction_method = "UMAP")
+cds <- learn_graph(cds)
+plot_cells(cds, color_cells_by = "cluster")
+
+
+get_earliest_principal_node <- function(cds, time_bin="Mic"){
+  cell_ids <- which(colData(cds)[, "broad.cell.type"] == time_bin)
+  
+  closest_vertex <-
+  cds@principal_graph_aux[["UMAP"]]$pr_graph_cell_proj_closest_vertex
+  closest_vertex <- as.matrix(closest_vertex[colnames(cds), ])
+  root_pr_nodes <-
+  igraph::V(principal_graph(cds)[["UMAP"]])$name[as.numeric(names
+  (which.max(table(closest_vertex[cell_ids,]))))]
+  
+  root_pr_nodes
+}
+cds <- order_cells(cds, root_pr_nodes=get_earliest_principal_node(cds))
+plot_cells(cds, color_cells_by="broad.cell.type", group_cells_by="broad.cell.type", group_label_size = 10, label_groups = TRUE, show_trajectory_graph = TRUE, label_leaves = TRUE, label_branch_points=TRUE)
+
+
+# Análisis por Genotipo
+
+table(seurat@meta.data$ApoE_group)
+DimPlot(seurat, group.by = "ApoE_group", reduction = "umap")
+plot_cells(cds, color_cells_by = "ApoE_group")
+markers_apoe_2_4 <- FindMarkers(seurat, ident.1 = "ApoE2", ident.2 = "ApoE4", group.by = "ApoE_group")
+head(markers_apoe_2_4)
+markers_apoe_3_4 <- FindMarkers(seurat, ident.1 = "ApoE3", ident.2 = "ApoE4", group.by = "ApoE_group")
+head(markers_apoe_3_4)
+markers_apoe_2_3 <- FindMarkers(seurat, ident.1 = "ApoE2", ident.2 = "ApoE3", group.by = "ApoE_group")
+
+wb <- createWorkbook()
+
+datasets <- list(
+  "markers_apoe_2_4" = markers_apoe_2_4,
+  "markers_apoe_3_4" = markers_apoe_3_4,
+  "markers_apoe_2_3" = markers_apoe_2_3
+)
+
+for (name in names(datasets)) {
+  addWorksheet(wb, name)
+  writeData(wb, sheet = name, datasets[[name]])
+}
+
+saveWorkbook(wb, "markers_apoe.xlsx", overwrite = TRUE)
+
+
+plot_cells(cds, color_cells_by = "pseudotime", 
+           show_trajectory_graph = TRUE)
+
+top_markers_res <- top_markers(cds, 
+                               group_cells_by = "broad.cell.type", 
+                               cores = 4)  
+
+head(top_markers_res)
+
+
+top_specific_markers <- top_markers_res %>% 
+  filter(marker_test_q_value <= 0.05,  
+         fraction_expressing >= 0.10) %>%  
+  group_by(cell_group) %>%
+  top_n(3, pseudo_R2)  
+
+top_specific_marker_ids <- unique(top_specific_markers %>% pull(gene_id))
+
+top_specific_markers
+
+
+rowData(cds)$gene_short_name <- rownames(rowData(cds))
+
+plot_genes_by_group(cds,
+                    top_specific_marker_ids,
+                    group_cells_by = "broad.cell.type",
+                    ordering_type = "cluster_row_col",
+                    max.size = 9)
+
+plot_genes_by_group(cds,
+                    top_specific_marker_ids,
+                    group_cells_by = "ApoE_group",
+                    ordering_type = "cluster_row_col",
+                    max.size = 9)
